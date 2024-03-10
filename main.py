@@ -1,15 +1,18 @@
 from flask import Flask,render_template,request
 from twitter import TwitterClient
-app=Flask(__name__)
 import plotly.graph_objects as go
+
+app=Flask(__name__)
 api = TwitterClient()
+
 @app.route("/fatch",methods=['GET','POST'])
 def index():
     if (request.method == 'POST'):
         company = request.form.get('company')
         industry = request.form.get('industry')
 
-    tweets = api.get_tweets([company,industry], count=500)
+    tweets = api.get_tweets(query1=company, query2=industry, count=10)
+    print("ANSWER LIES HERE")
 
     # picking positive tweets from tweets
     ptweets = [tweet for tweet in tweets if tweet['sentiment'] == 'positive']

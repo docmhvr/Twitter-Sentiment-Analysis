@@ -12,19 +12,18 @@ class TwitterClient(object):
 		Class constructor or initialization method.
 		'''
 		# keys and tokens from the Twitter Dev Console
-		consumer_key = 'BdONUGPS0uhCKyFdMTc0V0SXK'
-    	consumer_secret = 'NHpFeXu1WvNTFW1H9Jz9R3zE2ipUgKDBY40M47Ov3n2thYbtt0'
-    	access_token = '1765822708120793088-N3rFsfX4vyvrBTsAcCz4cVUOrer0BJ'
-    	access_token_secret = 'HVhXjJawCauc8SgZEcQ7oXSnIbpGNmt5DqGqpdWFMWp1M'
+		consumer_key = '6OEh9asG9bXramVMg9CuaISPn'
+		consumer_secret = 'cYm1vdoRUwAPSvexWhw2u7I8nEd0CVwrITCqb6SkqVfcmZZPkv'
+		access_token = '1765822708120793088-GUfpaZMZp67IKBXndmLYGBW0edouQq'
+		access_token_secret = 'Ks1KGiYEOMRCHroJSZEBb1OXGXCmo0h8QhX0CeEsiY1Zh'
 
 		# attempt authentication
 		try:
 			# create OAuthHandler object
-			self.auth = OAuthHandler(consumer_key, consumer_secret)
-			# set access token and secret
-			self.auth.set_access_token(access_token, access_token_secret)
+			self.auth = OAuthHandler(consumer_key, consumer_secret,access_token, access_token_secret)
 			# create tweepy API object to fetch tweets
-			self.api = tweepy.API(self.auth)
+			self.api = tweepy.API(self.auth, wait_on_rate_limit=True)
+			print("ALL GOOD")
 		except:
 			print("Error: Authentication Failed")
 
@@ -41,7 +40,7 @@ class TwitterClient(object):
 		using textblob's sentiment method
 		'''
 		# create TextBlob object of passed tweet text
-		analysis = TextBlob(self.clean_tweet(tweet))
+		analysis = TextBlob(self.clean_tweet(tweet))		
 		# set sentiment
 		if analysis.sentiment.polarity > 0:
 			return 'positive'
@@ -50,48 +49,86 @@ class TwitterClient(object):
 		else:
 			return 'negative'
 
-	def get_tweets(self, query1, query2, count = 100):
+	def get_tweets(self, query1, query2, count=10):
 		'''
 		Main function to fetch tweets and parse them.
 		'''
-		# empty list to store parsed tweets
 		tweets = []
+		print(query1, query2)	
+		print(type(query1), type(query2))
+
+		# "'Apple''Semiconductor'-filter:retweets AND -filter:replies AND -filter:links"
+		# search_query = f"{query1}{query2}-filter:retweets AND -filter:replies AND -filter:links"
+		search_query = "'Apple''Semiconductor'-filter:retweets AND -filter:replies AND -filter:links"
+
+		no_of_tweets = 100
+		print(search_query, type(search_query))
 
 		try:
-			# call twitter api to fetch tweets
-			# fetched_tweets1 = self.api.search(q = query1, count = count)
-			# fetched_tweets2 = self.api.search(q = query2, count = count)
-			search_words = ['query1', '#query1', '#query2']
-			date_since = "2023-12-25"
-			fetched_tweets = tweepy.Cursor(
-			api.search, 
-			q=search_words, 
-			geocode="36.7783,-119.4179,3000km", # Coordinates for California (latitude, longitude) 
-			lang="en",
-            since=date_since).items(100)
-
+			#The number of tweets we want to retrieved from the search
+			fetched_tweets = self.api.search_tweets(q=search_query, lang="en", count=10, tweet_mode ='extended', until='2024-03-07')
+			print("NOTHING HERE")
 
 			# parsing tweets one by one
 			for tweet in fetched_tweets:
 				# empty dictionary to store required params of a tweet
 				parsed_tweet = {}
-
 				# saving text of tweet
-				parsed_tweet['text'] = tweet.text
+				print("2\n")
+				parsed_tweet['text'] = tweet.full_text
 				# saving sentiment of tweet
-				parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.text)
+				parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.full_text)
+				print("3\n")
 
 				# appending parsed tweet to tweets list
-				if tweet.retweet_count > 0:
-					# if tweet has retweets, ensure that it is appended only once
-					if parsed_tweet not in tweets:
-						tweets.append(parsed_tweet)
-				else:
-					tweets.append(parsed_tweet)
+				tweets.append(parsed_tweet)
 
 			# return parsed tweets
-			return tweets
+			return tweets			
 
-		except tweepy.TweepError as e:
-			# print error (if any)
-			print("Error : " + str(e))
+			# #Pulling Some attributes from the tweet
+			# attributes_container = [[tweet.user.name, tweet.created_at, tweet.favorite_count, tweet.source, tweet.full_text] for tweet in tweets]
+
+			# #Creation of column list to rename the columns in the dataframe
+			# columns = ["User", "Date Created", "Number of Likes", "Source of Tweet", "Tweet"]
+
+			# #Creation of Dataframe
+			# tweets_df = pd.DataFrame(attributes_container, columns=columns)
+		except BaseException as e:
+			print('Status Failed On,',str(e))
+
+		# try:
+		# 	# call twitter api to fetch tweets
+		# 	fetched_tweets1 = self.api.search_tweets(q=query1+"#"+query1+"-filer:retweets AND -filter:replies AND -filter:links", lang="en", tweet_mode=extended, count=count)
+		# 	fetched_tweets2 = self.api.search_tweets(q=query2+"#"+query2+"-filer:retweets AND -filter:replies AND -filter:links", lang="en", tweet_mode=extended, count=count)
+		# 	fetched_tweets = fetched_tweets1 + fetched_tweets2
+		# 	print("1")
+
+		# 	if fetched_tweets:
+		# 		# parsing tweets one by one
+		# 		for tweet in fetched_tweets:
+		# 			# empty dictionary to store required params of a tweet
+		# 			parsed_tweet = {}
+
+		# 			# saving text of tweet
+		# 			parsed_tweet['text'] = tweet.statuses.text
+		# 			# saving sentiment of tweet
+		# 			parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.statuses.text)
+		# 			print("2")
+
+		# 			# appending parsed tweet to tweets list
+		# 			if tweet.retweet_count > 0:
+		# 				# if tweet has retweets, ensure that it is appended only once
+		# 				if parsed_tweet not in tweets:
+		# 					tweets.append(parsed_tweet)
+		# 					print("3")
+		# 			else:
+		# 				tweets.append(parsed_tweet)
+
+		# 			# return parsed tweets
+		# 			print("4")
+		# 			return tweets
+
+		# except Exception as e:
+		# 	# Handle the exception
+		# 	print("Error3 : " + str(e))
